@@ -7,16 +7,19 @@ import Underline from "@tiptap/extension-underline";
 import { NoteContent } from "./_components/note-content";
 
 interface NotePageProps {
-  params: {
+  params: Promise<{
     noteId: string;
-  };
+  }>;
 }
 
 export default async function NotePage({ params }: NotePageProps) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const noteId = parseInt(params.noteId);
+  const p = await params;
+
+  const noteId = parseInt(p.noteId);
+
   if (isNaN(noteId)) notFound();
 
   try {

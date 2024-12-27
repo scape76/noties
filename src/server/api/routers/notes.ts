@@ -79,6 +79,7 @@ export const notesRouter = createTRPCRouter({
         id: z.number(),
         name: z.string().min(1),
         body: z.any(),
+        topicId: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -97,11 +98,28 @@ export const notesRouter = createTRPCRouter({
         });
       }
 
+      // Verify the new topic exists and belongs to the user
+      const newTopic = await db.query.topics.findFirst({
+        where: (topics, { eq, and }) =>
+          and(
+            eq(topics.id, input.topicId),
+            eq(topics.userId, ctx.session.user.id),
+          ),
+      });
+
+      if (!newTopic) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Topic not found",
+        });
+      }
+
       const [updatedNote] = await db
         .update(notes)
         .set({
           name: input.name,
           body: input.body,
+          topicId: input.topicId,
           editedAt: new Date(),
         })
         .where(eq(notes.id, input.id))

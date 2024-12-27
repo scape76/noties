@@ -10,6 +10,7 @@ export default {
         DEFAULT: {
           css: {
             maxWidth: "none",
+            outline: "none",
           },
         },
       },

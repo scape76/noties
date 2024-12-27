@@ -92,7 +92,10 @@ export function CreateNoteForm({ topicId }: CreateNoteFormProps) {
           <div className="rounded-lg border">
             <MenuBar editor={editor} />
             <div className="min-h-[200px] p-4">
-              <EditorContent editor={editor} className="prose max-w-none" />
+              <EditorContent
+                editor={editor}
+                className="prose max-w-none outline-none dark:prose-invert"
+              />
             </div>
           </div>
         </div>

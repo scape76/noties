@@ -3,16 +3,18 @@ import { CreateNoteForm } from "./_components/create-note-form";
 import { auth } from "@/server/auth";
 
 interface NewNotePageProps {
-  params: {
+  params: Promise<{
     topicId: string;
-  };
+  }>;
 }
 
 export default async function NewNotePage({ params }: NewNotePageProps) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const topicId = parseInt(params.topicId);
+  const p = await params;
+
+  const topicId = parseInt(p.topicId);
   if (isNaN(topicId)) redirect("/topics");
 
   return (

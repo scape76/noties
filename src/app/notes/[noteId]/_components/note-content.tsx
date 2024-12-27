@@ -1,7 +1,7 @@
 "use client";
 
 // app/notes/[noteId]/_components/note-content.tsx
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
@@ -54,12 +54,18 @@ export function NoteContent({ note, html }: NoteContentProps) {
       {/* Topic breadcrumb */}
       {note.topic && (
         <div className="text-sm text-muted-foreground">
-          Topic: {note.topic.name}
+          Topic:
+          <Link
+            href={`/topics/${note.topic.id}`}
+            className={buttonVariants({ variant: "link" })}
+          >
+            {note.topic.name}
+          </Link>
         </div>
       )}
 
       {/* Note content with typography */}
-      <div className="prose dark:prose-invert max-w-none">
+      <div className="prose max-w-none dark:prose-invert">
         {html ? (
           <div dangerouslySetInnerHTML={{ __html: html }} />
         ) : (

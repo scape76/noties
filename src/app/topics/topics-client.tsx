@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { EllipsisVerticalIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -27,6 +28,11 @@ import { toast } from "sonner";
 import Link from "next/link";
 import type { Topic } from "@/server/db/schema";
 import React from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type TopicWithSubtopics = Topic & { subtopics: TopicWithSubtopics[] };
 
@@ -56,29 +62,13 @@ export function TopicsClient({
   const deleteTopic = api.topics.delete.useMutation({
     onSuccess: () => {
       toast.success("Topic deleted successfully");
-      // If we're on a topic page and delete it, go back to root
-      if (currentTopicId) {
-        router.push("/topics");
-      } else {
-        router.refresh();
-      }
+      router.refresh();
+      location.reload();
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
-
-  const handleBreadcrumbClick = (topic: TopicWithSubtopics, index: number) => {
-    if (topic.id === 0) {
-      // Clicking "Topics" breadcrumb
-      router.push("/topics");
-      return;
-    }
-
-    setBreadcrumbs((prev) => prev.slice(0, index + 1));
-    setSelectedTopic(topic);
-    router.push(`/topics/${topic.id}`);
-  };
 
   const handleDelete = async (topicId: number) => {
     if (
@@ -103,23 +93,13 @@ export function TopicsClient({
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink
-                href="/topics"
-                onClick={() =>
-                  handleBreadcrumbClick({ id: 0, name: "Topics" } as Topic, -1)
-                }
-              >
-                Topics
-              </BreadcrumbLink>
+              <BreadcrumbLink href="/topics">Topics</BreadcrumbLink>
             </BreadcrumbItem>
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={crumb.id}>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink
-                    href={`/topics/${crumb.id}`}
-                    onClick={() => handleBreadcrumbClick(crumb, index)}
-                  >
+                  <BreadcrumbLink href={`/topics/${crumb.id}`}>
                     {crumb.name}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
@@ -133,11 +113,23 @@ export function TopicsClient({
         <h1 className="text-2xl font-bold">
           {selectedTopic ? selectedTopic.name : "My Topics"}
         </h1>
-        <Button onClick={() => setIsCreateOpen(true)}>Create New Topic</Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <EllipsisVerticalIcon className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56"></DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => setIsCreateOpen(true)}>
+            Create New Topic
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {currentTopics.map((topic) => (
+        {currentTopics?.map((topic) => (
           <Card key={topic.id}>
             <CardHeader>
               <CardTitle>{topic.name}</CardTitle>
@@ -153,24 +145,6 @@ export function TopicsClient({
                 >
                   View
                 </Link>
-                {/* <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedTopic(topic);
-                    setIsEditOpen(true);
-                  }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedTopic(topic);
-                    setIsMoveOpen(true);
-                  }}
-                >
-                  Move
-                </Button> */}
                 <Button
                   variant="destructive"
                   onClick={() => handleDelete(topic.id)}

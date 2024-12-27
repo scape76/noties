@@ -72,19 +72,13 @@ export function CreateTopicForm({
   const utils = api.useUtils();
 
   const createTopic = api.topics.create.useMutation({
-    onSuccess: async () => {
+    onSuccess: () => {
+      // router.refresh();
+      location.reload();
       toast.success("Topic created successfully");
       form.reset();
       onSuccess?.();
       onOpenChange(false);
-
-      await Promise.all([
-        utils.topics.getRootTopics.invalidate(),
-        parentId && utils.topics.getById.invalidate({ id: parentId }),
-        parentId && utils.topics.getSubtopics.invalidate({ id: parentId }),
-        utils.topics.getBreadcrumbTrail.invalidate(),
-      ]);
-      router.refresh();
     },
     onError: (error) => {
       toast.error(error.message);

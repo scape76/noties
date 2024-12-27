@@ -6,22 +6,26 @@ import { TopicsClient } from "../topics-client";
 import { NotesGrid } from "../_components/notes-grid";
 
 interface TopicPageProps {
-  params: {
+  params: Promise<{
     topicId: string;
-  };
+  }>;
 }
 
 export default async function TopicPage({ params }: TopicPageProps) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const topicId = parseInt(params.topicId);
+  const p = await params;
+
+  const topicId = parseInt(p.topicId);
   if (isNaN(topicId)) notFound();
 
   try {
     // Fetch the current topic and its ancestry chain
     const topic = await api.topics.getById({ id: topicId });
     if (!topic) notFound();
+
+    console.log("topic ", topic);
 
     // Fetch the topic's breadcrumb trail
     const breadcrumbTrail = await api.topics.getBreadcrumbTrail({

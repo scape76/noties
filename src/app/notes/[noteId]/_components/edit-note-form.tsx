@@ -20,10 +20,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MenuBar } from "@/components/editor/menu-bar";
+import { AsyncSelect } from "@/components/async-select";
 
 const formSchema = z.object({
   name: z.string().min(1, "Title is required"),
   body: z.any(),
+  topicId: z.number(),
 });
 
 interface EditNoteFormProps {
@@ -37,12 +39,14 @@ interface EditNoteFormProps {
 
 export function EditNoteForm({ note }: EditNoteFormProps) {
   const router = useRouter();
+  const utils = api.useUtils();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: note.name,
       body: note.body,
+      topicId: note.topicId,
     },
   });
 
@@ -65,6 +69,11 @@ export function EditNoteForm({ note }: EditNoteFormProps) {
     },
   });
 
+  const searchTopics = async (query?: string) => {
+    const topics = await utils.topics.search.fetch({ query });
+    return topics;
+  };
+
   function onSubmit(data: z.infer<typeof formSchema>) {
     if (!editor) return;
 
@@ -72,6 +81,7 @@ export function EditNoteForm({ note }: EditNoteFormProps) {
       id: note.id,
       name: data.name,
       body: editor.getJSON(),
+      topicId: data.topicId,
     });
   }
 
@@ -91,13 +101,41 @@ export function EditNoteForm({ note }: EditNoteFormProps) {
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="topicId"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Topic</FormLabel>
+              <FormControl>
+                <AsyncSelect
+                  fetcher={searchTopics}
+                  renderOption={(topic) => (
+                    <div className="flex flex-col">
+                      <span>{topic.name}</span>
+                    </div>
+                  )}
+                  getOptionValue={(topic) => String(topic.id)}
+                  getDisplayValue={(topic) => topic.name}
+                  value={String(field.value)}
+                  onChange={(value) => field.onChange(Number(value))}
+                  label="Select topic"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="space-y-2">
           <FormLabel>Content</FormLabel>
           <div className="rounded-lg border">
             <MenuBar editor={editor} />
             <div className="min-h-[200px] p-4">
-              <EditorContent editor={editor} className="prose max-w-none" />
+              <EditorContent
+                editor={editor}
+                className="prose max-w-none outline-none dark:prose-invert"
+              />
             </div>
           </div>
         </div>
@@ -106,8 +144,8 @@ export function EditNoteForm({ note }: EditNoteFormProps) {
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button type="submit" disabled={updateNote.isLoading}>
-            {updateNote.isLoading ? "Saving..." : "Save Changes"}
+          <Button type="submit" disabled={updateNote.isPending}>
+            {updateNote.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </form>

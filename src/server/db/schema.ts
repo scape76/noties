@@ -1,6 +1,7 @@
 import type { JSONContent } from "@tiptap/react";
 import { relations, sql } from "drizzle-orm";
 import {
+  AnyPgColumn,
   index,
   integer,
   json,
@@ -133,7 +134,9 @@ export const verificationTokens = createTable(
 export const topics = createTable("topics", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  parentId: integer("parent_id"),
+  parentId: integer("parent_id").references((): AnyPgColumn => topics.id, {
+    onDelete: "cascade",
+  }),
   userId: varchar("user_id", { length: 255 })
     .notNull()
     .references(() => users.id),
@@ -158,7 +161,9 @@ export const notes = createTable("notes", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   body: json("body").$type<JSONContent>(),
-  topicId: integer("topic_id").references(() => topics.id),
+  topicId: integer("topic_id").references(() => topics.id, {
+    onDelete: "cascade",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   editedAt: timestamp("edited_at").defaultNow().notNull(),
 });

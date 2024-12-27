@@ -4,16 +4,17 @@ import { auth } from "@/server/auth";
 import { api } from "@/trpc/server";
 
 interface EditNotePageProps {
-  params: {
+  params: Promise<{
     noteId: string;
-  };
+  }>;
 }
 
 export default async function EditNotePage({ params }: EditNotePageProps) {
   const session = await auth();
   if (!session) redirect("/login");
+  const p = await params;
 
-  const noteId = parseInt(params.noteId);
+  const noteId = parseInt(p.noteId);
   if (isNaN(noteId)) notFound();
 
   try {

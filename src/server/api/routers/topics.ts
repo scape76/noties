@@ -8,6 +8,7 @@ import { db } from "@/server/db";
 import { eq, isNull, and } from "drizzle-orm";
 import { topics } from "@/server/db/schema";
 import { TRPCError } from "@trpc/server";
+import { revalidatePath } from "next/cache";
 
 // Input validation schemas
 const createTopicSchema = z.object({
@@ -39,7 +40,11 @@ export const topicsRouter = createTRPCRouter({
       where: (topics, { eq, and, isNull }) =>
         and(eq(topics.userId, ctx.session.user.id), isNull(topics.parentId)),
       with: {
-        subtopics: true,
+        subtopics: {
+          with: {
+            subtopics: true,
+          },
+        },
       },
     });
     return rootTopics;
@@ -52,7 +57,11 @@ export const topicsRouter = createTRPCRouter({
         where: (topics, { eq, and }) =>
           and(eq(topics.id, input.id), eq(topics.userId, ctx.session.user.id)),
         with: {
-          subtopics: true,
+          subtopics: {
+            with: {
+              subtopics: true,
+            },
+          },
         },
       });
 
@@ -120,6 +129,8 @@ export const topicsRouter = createTRPCRouter({
         })
         .returning();
 
+      revalidatePath(`/topics/${input.parentId}`);
+
       return newTopic;
     }),
 
@@ -146,6 +157,8 @@ export const topicsRouter = createTRPCRouter({
           and(eq(topics.id, input.id), eq(topics.userId, ctx.session.user.id)),
         )
         .returning();
+
+      revalidatePath(`/topics/${input.id}`);
 
       return updatedTopic;
     }),
@@ -222,24 +235,35 @@ export const topicsRouter = createTRPCRouter({
         });
       }
 
-      // Recursively delete all subtopics
-      async function deleteSubtopics(topicId: number) {
-        const subtopics = await db.query.topics.findMany({
-          where: eq(topics.parentId, topicId),
-        });
-
-        for (const subtopic of subtopics) {
-          await deleteSubtopics(subtopic.id);
-        }
-
-        await db.delete(topics).where(eq(topics.id, topicId));
-      }
-
-      await deleteSubtopics(input.id);
+      await db.delete(topics).where(eq(topics.id, input.id));
 
       return { success: true };
     }),
 
+  search: protectedProcedure
+    .input(
+      z.object({
+        query: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      // let filters = eq(topics.userId, ctx.session.user.id);
+
+      // if (input.query) {
+      //   filters = and(filters, like(topics.name, `%${input.query}%`));
+      // }
+
+      const topics = await db.query.topics.findMany({
+        where: (topics, { and, eq, like }) =>
+          and(
+            eq(topics.userId, ctx.session.user.id),
+            input.query ? like(topics.name, `%${input.query}%`) : undefined,
+          ),
+        limit: 10,
+      });
+
+      return topics;
+    }),
   // Get subtopics of a specific topic
   getSubtopics: protectedProcedure
     .input(getTopicByIdSchema)

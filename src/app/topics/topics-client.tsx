@@ -31,8 +31,11 @@ import React from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MoveTopicDialog } from "./_components/move-topic-dialog";
 
 type TopicWithSubtopics = Topic & { subtopics: TopicWithSubtopics[] };
 
@@ -55,15 +58,20 @@ export function TopicsClient({
   const [breadcrumbs, setBreadcrumbs] = useState<Topic[]>(initialBreadcrumbs);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
 
   const router = useRouter();
+  const utils = api.useUtils();
 
   const deleteTopic = api.topics.delete.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Topic deleted successfully");
+      // If we're deleting the current topic, redirect to topics root
+      if (currentTopicId) {
+        router.push("/topics");
+      }
+      await utils.topics.getRootTopics.invalidate();
       router.refresh();
-      location.reload();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -73,7 +81,7 @@ export function TopicsClient({
   const handleDelete = async (topicId: number) => {
     if (
       confirm(
-        "Are you sure you want to delete this topic? All subtopics will also be deleted.",
+        "Are you sure you want to delete this topic? All subtopics and notes will be deleted.",
       )
     ) {
       await deleteTopic.mutateAsync({ id: topicId });
@@ -82,10 +90,6 @@ export function TopicsClient({
 
   // Get the current topics to display
   const currentTopics = selectedTopic ? selectedTopic.subtopics : initialTopics;
-
-  const availableParents = initialTopics.filter(
-    (t) => t.id !== selectedTopic?.id,
-  );
 
   return (
     <div className="space-y-6">
@@ -114,14 +118,34 @@ export function TopicsClient({
           {selectedTopic ? selectedTopic.name : "My Topics"}
         </h1>
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <EllipsisVerticalIcon className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56"></DropdownMenuContent>
-          </DropdownMenu>
+          {currentTopicId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <EllipsisVerticalIcon className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setIsEditOpen(true);
+                  }}
+                >
+                  Edit Topic
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsMoveDialogOpen(true)}>
+                  Move Topic
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => handleDelete(currentTopicId)}
+                >
+                  Delete Topic
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <Button onClick={() => setIsCreateOpen(true)}>
             Create New Topic
           </Button>
@@ -158,27 +182,29 @@ export function TopicsClient({
         ))}
       </div>
 
-      {/* Forms */}
+      {/* Create topic dialog */}
       <CreateTopicForm
         parentId={selectedTopic?.id}
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
       />
 
+      {/* Edit topic dialog */}
       {selectedTopic && (
-        <>
-          <EditTopicForm
-            topic={selectedTopic}
-            open={isEditOpen}
-            onOpenChange={setIsEditOpen}
-          />
-          <MoveTopicForm
-            topic={selectedTopic}
-            availableParents={availableParents}
-            open={isMoveOpen}
-            onOpenChange={setIsMoveOpen}
-          />
-        </>
+        <EditTopicForm
+          topic={selectedTopic}
+          open={isEditOpen}
+          onOpenChange={setIsEditOpen}
+        />
+      )}
+
+      {/* Move topic dialog */}
+      {currentTopicId && (
+        <MoveTopicDialog
+          open={isMoveDialogOpen}
+          onOpenChange={setIsMoveDialogOpen}
+          currentTopicId={currentTopicId}
+        />
       )}
     </div>
   );

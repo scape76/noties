@@ -58,7 +58,7 @@ export function NotesGrid({ notes, topicId }: NotesGridProps) {
         {notes.map((note) => (
           <Link
             key={note.id}
-            href={`/topics/${topicId}/notes/${note.id}`}
+            href={`/notes/${note.id}`}
             className="block transition-opacity hover:opacity-80"
           >
             <Card className={viewMode === "list" ? "flex items-center" : ""}>
@@ -72,9 +72,19 @@ export function NotesGrid({ notes, topicId }: NotesGridProps) {
                 </CardDescription>
               </CardHeader>
               {viewMode === "grid" && (
-                <CardContent>
-                  {/* Add any additional note content you want to display */}
-                  {/* For example, last modified date, tags, etc. */}
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span>Created:</span>
+                    <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  {note.editedAt !== note.createdAt && (
+                    <div className="flex items-center justify-between">
+                      <span>Last edited:</span>
+                      <span>
+                        {new Date(note.editedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
                 </CardContent>
               )}
             </Card>

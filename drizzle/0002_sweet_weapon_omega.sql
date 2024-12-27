@@ -1,0 +1,2 @@
+ALTER TABLE "notes-topics-app_notes" ADD COLUMN "created_at" timestamp DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "notes-topics-app_notes" ADD COLUMN "edited_at" timestamp DEFAULT now() NOT NULL;

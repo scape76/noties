@@ -28,8 +28,10 @@ import Link from "next/link";
 import type { Topic } from "@/server/db/schema";
 import React from "react";
 
+type TopicWithSubtopics = Topic & { subtopics: TopicWithSubtopics[] };
+
 type TopicsClientProps = {
-  initialTopics: (Topic & { subtopics: Topic[] })[];
+  initialTopics: TopicWithSubtopics[];
   initialBreadcrumbs?: Topic[];
   currentTopicId?: number;
 };
@@ -39,7 +41,7 @@ export function TopicsClient({
   initialBreadcrumbs = [],
   currentTopicId,
 }: TopicsClientProps) {
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(
+  const [selectedTopic, setSelectedTopic] = useState<TopicWithSubtopics | null>(
     currentTopicId
       ? initialTopics.find((t) => t.id === currentTopicId) || null
       : null,
@@ -66,7 +68,7 @@ export function TopicsClient({
     },
   });
 
-  const handleBreadcrumbClick = (topic: Topic, index: number) => {
+  const handleBreadcrumbClick = (topic: TopicWithSubtopics, index: number) => {
     if (topic.id === 0) {
       // Clicking "Topics" breadcrumb
       router.push("/topics");

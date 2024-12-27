@@ -1,3 +1,4 @@
+import type { JSONContent } from "@tiptap/react";
 import { relations, sql } from "drizzle-orm";
 import {
   index,
@@ -156,8 +157,10 @@ export type Topic = typeof topics.$inferSelect;
 export const notes = createTable("notes", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  body: json("body"),
+  body: json("body").$type<JSONContent>(),
   topicId: integer("topic_id").references(() => topics.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  editedAt: timestamp("edited_at").defaultNow().notNull(),
 });
 
 export type Note = typeof notes.$inferSelect;

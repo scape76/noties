@@ -153,7 +153,7 @@ export function TopicsClient({
                 >
                   View
                 </Link>
-                <Button
+                {/* <Button
                   variant="outline"
                   onClick={() => {
                     setSelectedTopic(topic);
@@ -170,7 +170,7 @@ export function TopicsClient({
                   }}
                 >
                   Move
-                </Button>
+                </Button> */}
                 <Button
                   variant="destructive"
                   onClick={() => handleDelete(topic.id)}

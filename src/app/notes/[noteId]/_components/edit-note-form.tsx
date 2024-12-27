@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent, Editor } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import { useForm } from "react-hook-form";
@@ -26,33 +26,38 @@ const formSchema = z.object({
   body: z.any(),
 });
 
-interface CreateNoteFormProps {
-  topicId: number;
+interface EditNoteFormProps {
+  note: {
+    id: number;
+    name: string;
+    body: any;
+    topicId: number;
+  };
 }
 
-export function CreateNoteForm({ topicId }: CreateNoteFormProps) {
+export function EditNoteForm({ note }: EditNoteFormProps) {
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      body: "",
+      name: note.name,
+      body: note.body,
     },
   });
 
   const editor = useEditor({
     extensions: [StarterKit, Underline],
-    content: "",
+    content: note.body,
     onUpdate: ({ editor }) => {
       form.setValue("body", editor.getJSON());
     },
   });
 
-  const createNote = api.notes.create.useMutation({
+  const updateNote = api.notes.update.useMutation({
     onSuccess: () => {
-      toast.success("Note created successfully");
-      router.push(`/topics/${topicId}`);
+      toast.success("Note updated successfully");
+      router.push(`/notes/${note.id}`);
       router.refresh();
     },
     onError: (error) => {
@@ -63,10 +68,10 @@ export function CreateNoteForm({ topicId }: CreateNoteFormProps) {
   function onSubmit(data: z.infer<typeof formSchema>) {
     if (!editor) return;
 
-    createNote.mutate({
+    updateNote.mutate({
+      id: note.id,
       name: data.name,
       body: editor.getJSON(),
-      topicId,
     });
   }
 
@@ -101,8 +106,8 @@ export function CreateNoteForm({ topicId }: CreateNoteFormProps) {
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button type="submit" disabled={createNote.isPending}>
-            {createNote.isPending ? "Creating..." : "Create Note"}
+          <Button type="submit" disabled={updateNote.isLoading}>
+            {updateNote.isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </form>

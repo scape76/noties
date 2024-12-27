@@ -43,7 +43,7 @@ export function NoteContent({ note, html }: NoteContentProps) {
             </Link>
           </Button>
           <Button asChild>
-            <Link href={`/topics/${note.id}/edit`}>
+            <Link href={`/notes/${note.id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Note
             </Link>
